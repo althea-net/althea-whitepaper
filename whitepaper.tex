@@ -1,0 +1,262 @@
+\documentclass[11pt]{article}
+\usepackage[linktocpage=true]{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{fixltx2e}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{xcolor}
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  breaklines=true,
+  tabsize=4
+}
+
+\title{%
+  \textbf{Althea} \\ 
+  \large An incentivized mesh network protocol}
+\date{2017-5-24}
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+As the number of connected individuals and devices expands, the `last mile` continues to be the greatest challenge both in the connected and developing worlds, representing a disproportionate portion of the cost and difficulty of connecting the world.
+ 
+Althea is meant to operate on the last mile, from a source of internet connectivity (such as an internet exchange point) to the end user, and creates a distributed ISP. The last mile is currently an inefficient market- many areas only have one ISP \cite{fcc}. Althea aims to replace centralized ISPs with a free market of individuals providing connectivity services as part of one decentralized network.
+ 
+We hope that by lowering the barrier of entry to earn money by providing connectivity services we can decrease the cost of of internet access. This could help connect the developing world as well as creating an environment that fosters competition in otherwise monopolistic last mile infrastructure in developed countries.
+ 
+Althea’s goal is for any person to be able to install a piece of equipment, route traffic for others, and receive payment for the service.
+
+\begin{itemize}
+\item[--] Switching costs within the system are reduced, as nodes switch between connectivity providers automatically according to a routing protocol which finds a route with the best combination of reliability, bandwidth, and low cost.
+ 
+\item[--] Advertising and marketing costs for the connectivity providers are eliminated, as the only advertisements in this system are the automatic advertisements of price and route quality between nodes. This makes things easy for new entrants.
+ 
+\item[--] Contract and billing costs are eliminated by payment channels. Payment channels allow one to make micropayments with very low overhead.
+\end{itemize}
+
+\end{abstract}
+
+\section*{Overview}
+\label{sec:overview}
+Althea allows routers to pay each other for bandwidth using cryptocurrency payment channels. An important architectural detail is that nodes only pay neighbors for forwarding packets. On top of this pay-for-forward network, we build a system allowing consumers to pay for internet access. Althea is intended to be used in local “mesh” \cite{wcn} networks. There are a few different types of nodes that participate in Althea:
+
+\begin{itemize}
+\item[--] \textbf{Home nodes} are installed by people who want to buy internet access on Althea. You can think of a home node as being similar to the router and/or modem that is installed by a traditional ISP. The difference is that it is independent of any one ISP.
+ 
+Home nodes may be paid by other nodes to forward packets, but without specialized hardware and positioning the income is expected to be be relatively small.
+
+\item[--] \textbf{Intermediary nodes} are installed by people who want to earn money by forwarding internet traffic (connectivity providers). These will typically be more powerful nodes and may be placed in advantageous locations with good line of sight to other nodes. 
+
+\item[--] \textbf{Gateway nodes} are like intermediary nodes, but they are connected to a source of cheap internet bandwidth such as an internet exchange, an internet backbone connection, or even a business-grade connection from a conventional ISP. They act as connection from Althea’s physical layer to the outside internet. However, they are shielded from having to take legal responsibility for traffic on the network by the exit servers.
+
+\item[--] \textbf{Exit servers} are not necessarily part of the local physical network, but can be hosted in a datacenter reachable over the internet. They are connected to gateway nodes over VPN tunnels. Exit servers provide an endpoint to verify quality metrics propagated by nodes in the network. This enables automatic selection of gateway nodes by the routing protocol. Exit servers also take on the legal role of an ISP, performing network address translation to route requests onto the public internet and dealing with copyright complaints etc. This allows gateway nodes to act as pure providers of bandwidth, without having to take on any legal risk resulting from the use of their service.
+
+\end{itemize}
+
+Read more about the network architecture in \autoref{sec:architecture}.
+
+\subsection*{Routing}
+In \autoref{sec:routing}, we define a couple of extensions to the Babel routing protocol. Babel was selected because it has several useful properties for our purpose. However, any distance vector routing protocol could be modified to exhibit the properties we require. Distance vector protocols are already used extensively on the internet. One well-known distance vector protocol is BGP \cite{bgp}.
+ 
+Routing in distance vector protocols is based on an advertised connection quality metric. Nodes send an announcement packet stating their identity and existence to the network once every predetermined period. These announcement packets are then passed from node to node. Each node updates the metric to reflect the connection quality between it and the neighbor it got the announcement from. Using this information, each node is able to build up a routing table of the best neighbors to forward packets to to get to any destination on the network.
+ 
+We propose two main additions to distance vector routing:
+
+\begin{itemize}
+\item[--] A verifiable quality metric.
+\item[--] A price metric.
+\end{itemize}
+
+A verifiable quality metric is a connection quality metric that can be verified by a node and the destination that it is sending packets to. Our first extension to Babel allows nodes to verify the metrics advertised by their neighbors.
+ 
+To advertise prices a second metric is added to the routing advertisements, this time containing a ‘price’ value for some arbitrary but agreed upon amount of data transfer. When passing advertisements each node updates the price field with their bid for passing data. Routes are then selected by optimizing the quality metric vs the price metric and paying the selected the full sum required to route all the way to the destination. 
+
+\subsection*{Payments}
+Each node on the network establishes payment channels with each of its neighbors. A payment channel is a method for two parties to exchange payments trustlessly by signing transactions that alter the balance of an escrow account held by a bank or blockchain (we may use the Ethereum blockchain for Althea) [cite], [cite], [cite]. More detail about the functioning of our payment channels can be found in section \autoref{sec:payments}.
+ 
+The important thing about a payment channel is that after the channel has been opened, and funds have been placed in escrow, individual payments can be made directly between the two parties without submitting anything to the bank or blockchain. This means that the entire payment can be completed in one packet. Most payment systems need to send another transmission to a bank or blockchain, and wait for it to be confirmed. 
+ 
+Using payment channels, nodes can pay each other in very small increments (on the order of cents or less). This allows them to pay their neighbors to forward data without having to place a lot of trust in their neighbors. Home nodes also open a payment channel with an exit server of their choice. This channel is used to pay the exit server for routing data onto the internet, as well as paying for return traffic back to the node. Read more about exit servers in section \autoref{sec:architecture}.
+
+\subsection*{Metering}
+Nodes keep track of data they have forwarded for their neighbors, and how much they have been paid. If these two amounts do not match up, they must having some way of cutting off access to the delinquent neighbor. Blocking the neighbor’s MAC address could be one way to accomplish this, but MAC addresses are easily changed and spoofed. Similarly, exit servers must be able to control traffic from home nodes.
+ 
+In section \autoref{sec:metering}, we cover the use of tunnels to allow neighbors to verify traffic between one another, as well as allowing exit servers to authenticate traffic from home nodes.
+
+\section{Technical specifications}
+\subsection{Routing}
+
+Routing in Althea is based on the Babel routing protocol \cite{babel}. Babel is a distance vector protocol which has proven to be robust and performant. All distance vector protocols are based on a distributed form of the Bellman-Ford pathfinding algorithm \cite{bellman}. Nodes first perform some kind of link quality test on the connections to their neighbors. This is known as the “link cost”. They then share information about which destinations they can reach at which quality (this starts out being only their immediate neighbors).
+ 
+Whenever a node receives information about a destination, it combines this information with the link cost of the neighbor it received this information from. This composite score is known as the “route metric”, and represents the quality with which the destination can be reached across several hops. The neighbor offering the best metric for a given destination is selected as the next hop. All packets being sent to the destination will go through this neighbor. Babel implements this selection by adding and remove routes from the Linux kernel routing table.
+ 
+From the Babel specification:
+\begin{quote}
+As many routing algorithms, Babel computes costs of links between any two neighbouring nodes, abstract values attached to the edges between two nodes.  [..]\\
+Given a route between any two nodes, the metric of the route is the sum of the costs of all the edges along the route. The goal of the routing algorithm is to compute, for every source S, the tree of the routes of lowest metric to S.
+\end{quote}
+
+NOTE: We will use the word ``destination" to refer to the destination of data packets. Babel refers to this as ``source", because it is the source of routing packets.
+
+\subsubsection{Route metric verification}
+All current distance vector protocols, including Babel, have a major weakness. All information about link cost and route metrics is provided on a completely trusted and unverified basis. There is nothing stopping any node from claiming that it has the best route to any destination. This is usually not a problem, since most networks today are owned by one entity. In Althea, nodes are owned by many people and entities, all competing to provide the best service. Leaving this vulnerability unaddressed would allow financially-motivated attacks, such as nodes claiming to have better routes than they actually do in an effort to get more business.
+ 
+Babel uses a sequence of “Hello” and “I heard you” (or “IHU”) messages to estimate link quality between neighbors. Each node periodically broadcasts a Hello message to all of its neighbors. Each Hello has a sequence number. By looking at the sequence number of each Hello received and comparing it to the last one, neighbors can determine whether they have missed Hello messages from the node. Nodes keep an array of 16 bits for each neighbor corresponding to the last 16 Hello messages, with a 1 representing a received Hello and a 0 representing a missed Hello. From this array, a number called the “rxcost” (short for receive cost) is calculated.
+
+This rxcost is then sent back to the neighbor in an IHU message. The neighbor then considers this number the “txcost” (short for transmit cost). From these two numbers the overall link cost is calculated using the ETX metric \cite{etx}. From the Babel specification:
+
+\begin{quote}
+A node uses a neighbour's Hello history to compute an estimate,
+written beta, of the probability that a Hello TLV is successfully
+received.  The rxcost is defined as 256/beta.\\
+
+Let alpha be MIN(1, 256/txcost), an estimate of the probability of
+successfully sending a Hello TLV.  The cost is then computed by\\
+
+   cost = 256/(alpha * beta)\\
+
+or, equivalently,\\
+
+   cost = (MAX(txcost, 256) * rxcost) / 256.\\
+
+\end{quote}
+
+We propose a modification to the Babel protocol to allow for verification of routes. Our modification involves nodes sending Hellos and IHU messages back and forth to remote destinations. The same cost and metric calculations are performed as with local neighbors. The metric calculated is expected to be close to the overall metric advertised for the destination by the neighbor currently forwarding packets to the destination. This gives us a way to verify the accuracy of advertised routes. If the metric does not match the metric advertised by the selected neighbor, the neighbor’s accuracy score is affected (\autoref{sec:accuracy}), and the metric through this neighbor is adjusted (\autoref{sec:adjustment}).
+
+\subsubsection{Verification scheduling}
+We have the ability to test and verify the routes advertised by neighbors, but we need some way of deciding which routes to verify. Verification runs on a timer. Each verification cycle a node follows this procedure to choose a route $r$ to verify:
+
+\begin{algorithmic}\\
+\State $D=$ \{ destinations used in the past $x$ seconds \}
+\State $d\gets$ \Call{randomSample}{$D$}
+\State $R=$ \{ feasible routes to destination $d$ \}
+\State $r\gets$ \Call{randomSample}{$R$}\\
+\end{algorithmic}
+
+We start with the set of all destinations that have been used in the past $x$ seconds. $x$ will be set at a reasonable constant, or it could be adjusted to control verification focus. We select a destination $d$ from this set at random. We then get the set of all routes that are feasible and have a destination of $d$. We select a route $r$ from this set at random.
+
+To test the route, we send the destination “Remote Hello” packets for some amount of time. The Remote Hello packets are similar to Babel’s local Hello packets, but they also carry information about which neighbor they were sent through. Destinations periodically send “Remote IHU” packets to those nodes they have recently received Remote Hello packets from. Similar to Babel’s link cost calculation, the Remote Hello packets are used by the destination to calculate a route cost, and the Remote IHU packets carry this information back. Remote IHU packets also carry back the information about which neighbor the Remote Hello was sent through.
+
+\subsubsection{Accuracy score}
+Once we receive a Remote IHU from a destination, we update the neighbor’s accuracy score $s$ with the following procedure:
+
+\begin{algorithmic}\\
+\State $d=$ destination that sent the IHU
+\State $n=$ neighbor shown by IHU message
+\State $c=$ verified route cost shown by IHU message
+\State $m=$ advertised route metric of $n$
+\State $A=$ \{ accuracy scores of $n$, indexed by destination \}\\
+\State $a=$ \Call{min}{$m / c$, 1}
+\State $A_d\gets (A_d+a)/2$
+\State $s\gets$ \Call{average}{$A$}\\
+\If{$s < C_1$}
+\State $n$'s routes are removed from routing table
+\EndIf\\
+\end{algorithmic}
+
+A per-destination accuracy score $a$ is calculated as the proportion of the verified route cost $c$ to the route metric $m$ advertised by the neighbor $n$. It is then averaged with the current accuracy score for that destination $A_d$. We then take $s$, the average of all active destination accuracy scores for the neighbor. If $s$ drops below some adjustable value $C_1$, the neighbor’s routes are taken off of the kernel routing table.
+
+\subsubsection{Route metric adjustment}
+The above system is used to weed out chronically inaccurate neighbors, but it also supplies us with a stream of correct route metrics. We can use these metrics to improve our routing table even before a given inaccurate neighbor is dropped. When we receive the route cost c above, we can start using it instead of the neighbor’s advertised metric when selecting routes. We continue using c for a duration Tadjustment.
+ 
+How long to make Tadjustment? If Tadjustment is too short, then nodes will go right back to trusting an inaccurate metric that they recently had to correct. If Tadjustment is too long, then nodes will miss out on legitimate updates about newly improved routes.
+					
+To strike the right balance, exponentially increasing time-out will be used for bandwidth corrections beyond a small tolerance. A node that has participated in a correction will record the time $T_{last}$ it last performed a correction for a given route and the size of the correction $\delta$. When participating in another correction on the same route the duration $D$ to apply the bandwidth correction will be determined as:
+
+\[
+D = \frac{C_1}{T_{now} - T_{last}}^{\delta C_2}
+\]
+
+Where $C_1$ and $C_2$ are constants to be adjusted and hardcoded. This formula will make it take longer to go back to using a neighbor’s advertised metrics if the advertised metrics needed to be corrected recently, and/or required a large correction.
+
+\subsubsection{Price metric}
+We also need a way to propagate a price for each route, and take this price into account when making forwarding decisions. Babel already includes a mechanism for adding arbitrary ``External Sources of Willingness". This works by having nodes add a number to the metric they have calculated for a route. This doesn’t work for us for two reasons: 
+
+\begin{itemize}
+\item[--] First, the route metric in our system is verified. Modifying it arbitrarily would break this verification.
+\item[--] Second, the price must be distinct from the route metric, because it will be used to determine payment amounts. For these reasons, we use a separate price metric.
+\end{itemize}
+
+The requirements of this price metric are very simple, compared to other parts of Althea. It consists of an additional 16 bit price field in each Babel update TLV and in each route in a node’s routing table. This represents the amount of Althea tokens that it costs to forward one kilobyte of data to a destination. As update packets are propagated through the network, each node increases the route’s price by a certain amount. The simplest way to determine how much to add to the route price is with a constant set by the node’s operator. However, there could be many different types of automated price-setting algorithms to adjust the price based on demand or competition.
+
+Babel’s route selection procedure is extended to take this price field into account. Instead of selecting routes based purely on route metric, an extended metric $m'$ is calculated with
+\begin{algorithmic}\\
+\State $m'\gets m+pn$\\
+\end{algorithmic}
+
+Where $m$ is the route metric, $p$ is the price, and $n$ is a constant multiplier. Routes are then chosen based on $m'$. By adjusting $n$, nodes can determine how much weight to give price in the calculation. A node with a lower value for $n$ will tend to prefer expensive but higher quality routes. It would even be possible to populate multiple routing tables with routes selected at different values of $n$, and propagate routes from these tables under different router IDs. This or a similar mechanism could be used to allow neighbors to choose from among a range of price-quality tradeoffs.
+
+\subsection{Payment channels}
+Nodes in Althea must be able to pay their neighbors to forward packets. It’s advantageous for these payments to be made in very small increments. This prevents nodes from having to trust their neighbors to provide service for a longer amount of time. This allows nodes to securely get service from other nodes that they don’t necessarily know or trust. Payment channel messages can be very small, around 100 bytes. This allows payments to be made in very small increments.
+
+Even though payments are being made in very small increments, they are still being made incrementally. This implies some small level of trust, and we need to decide whether nodes will pay for forwarding service before receiving and verifying access or after. If they pay before, it would be possible for a malicious node to take the money and provide no service. If they pay after, it would be possible for a malicious node to use the service and then not pay.
+ 
+We’ve chosen for nodes to pay after receiving service. This is because if nodes pay before, it would be possible for a malicious node to repeatedly accept payment and not provide service (possibly switching identities each time). They could save up their ill-gotten tokens and make money with this strategy. On the other hand, if nodes pay after receiving service, malicious nodes that repeatedly receive service and don’t pay will get nothing but a bad connection.
+
+\subsubsection{Smart contract}
+Althea uses a Solidity contract for channels. This compiles to bytecode which runs natively on the Ethereum blockchain [cite], and many other blockchains [cite]. We will use ERC20 [cite], or an equivalent token standard, but we won’t get too deep into the rote details of implementing tokens in this paper.
+
+\paragraph{Channels list}
+The contract stores a list of \texttt{Channels}, indexed by pairs of participant addresses (payment addresses, not IP addresses) and \texttt{ChannelID}.
+
+\begin{lstlisting}
+Channels[address1 + address2 + ChannelID] = {
+	ChannelID: int16,
+	Balance1: int32,
+	Balance2: int32,
+	Open: boolean,
+	HoldPeriod: int16,
+	LastPaymentTx: PaymentTx,
+	LastPaymentTxTime: int16,
+}
+\end{lstlisting}
+
+\paragraph{Channel funding}
+When two nodes wish to open a channel, each one sends a channel \texttt{FundingTx} to the contract. This transaction includes the payment address of the other participant \texttt{Counterparty}, a \texttt{ChannelID} for the channel, and a \texttt{Fund} amount of Althea tokens to fund the channel. The contract stores the Althea tokens and adds an entry to the channels list for the participants.
+
+\begin{lstlisting}
+FundingTx = {
+	ChannelID: int16,
+	Counterparty: address,
+	Fund: int32,
+}
+\end{lstlisting}
+
+\paragraph{Channel payments}
+When one of the nodes wishes to pay the other, it sends a signed \texttt{PaymentTx} directly to the other node (not to the contract on the blockchain). This transaction includes a sequence number and an adjustment amount. The adjustment is an integer, that when added to the channel’s \texttt{Balance1} and subtracted from the channel’s \texttt{Balance2}, yields a new set of balances representing the state of the channel after the payment.
+
+\begin{lstlisting}
+PaymentTx = {
+	ID: int16,
+	SequenceNumber: int16,
+	Adjustment: int32,
+	Fast: boolean,
+	Signature1: [64]byte,
+	Signature2: [64]byte,
+}
+\end{lstlisting}
+
+The \texttt{PaymentTx} is all that is required to make a payment. To withdraw funds from the channel, a node adds its own signature to the \texttt{PaymentTx} and sends it to the contract on the blockchain. The contract stores the \texttt{PaymentTx} with the channel along with the time it was submitted.
+
+After the hold period is over, the channel is closed, and the nodes can withdraw their adjusted balances. If one of the nodes checks the blockchain before the hold period is over and discovers that the other has tried to submit an old \texttt{PaymentTx}, it can submit a newer \texttt{PaymentTx} (with a higher sequence number). The newer transaction will then override the older one. If the \texttt{Fast} boolean is set to true, the hold period is skipped.
+ 
+\paragraph{Attacks}
+There are a few attacks to be aware of, that nodes must take steps to prevent. The first is a denial of service attack, where one node submits an old \texttt{PaymentTx} and then prevents the other from accessing the blockchain to submit a newer transaction. This can be mitigated in two ways:
+
+\begin{itemize}
+\item[--] Increasing the hold period to increase the chance of the blockchain getting the real latest \texttt{PaymentTx}. However, increasing the hold period also allows one node to potentially tie up the other’s money for longer (although in normal operation, the \texttt{Fast} boolean will be set when both nodes agree to close the channel, and the channel will close immediately).
+ 
+\item[--] Send a ``bounty hunter'' periodic updates with the latest \texttt{PaymentTx}. In the event of a node trying to cheat with an old \texttt{PaymentTx}, the bounty hunter can override the old transaction, in return for a bounty.
+\end{itemize} 
+
+Another attack is a replay attack on the \texttt{PaymentTx}. If a node ever opens a new payment channel using an \texttt{ChannelID} that it has used on another payment channel, the \texttt{PaymentTx}s from one channel could be used to close the other. Nodes must make sure to never reuse a \texttt{ChannelID}. 
+
+\tableofcontents
+
+\end{document}
