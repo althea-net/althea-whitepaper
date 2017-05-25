@@ -30,16 +30,20 @@
 }
 
 \title{%
-  \textbf{Althea} \\ 
+  \textbf{Althea} \\
+	\vspace{3pt}
   \large An incentivized mesh network protocol}
-\date{2017-5-24}
+\author{Jehan Tremback, Justin Kilpatrick\\
+\texttt{\{jehan,justin\}@altheamesh.com}\\}
+\date{May 2017\\
+\texttt{v0.4}}
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
 
-As the number of connected individuals and devices expands, the `last mile` continues to be the greatest challenge both in the connected and developing worlds, representing a disproportionate portion of the cost and difficulty of connecting the world.
+As the number of connected individuals and devices expands, the ``last mile'' continues to be the greatest challenge both in the connected and developing worlds, representing a disproportionate portion of the cost and difficulty of connecting the world.
  
 Althea is meant to operate on the last mile, from a source of internet connectivity (such as an internet exchange point) to the end user, and creates a distributed ISP. The last mile is currently an inefficient market- many areas only have one ISP \cite{fcc}. Althea aims to replace centralized ISPs with a free market of individuals providing connectivity services as part of one decentralized network.
  
@@ -61,7 +65,7 @@ Althea’s goal is for any person to be able to install a piece of equipment, ro
 
 \section{Overview}
 \label{sec:overview}
-Althea allows routers to pay each other for bandwidth using cryptocurrency payment channels. An important architectural detail is that nodes only pay neighbors for forwarding packets. On top of this pay-for-forward network, we build a system allowing consumers to pay for internet access. Althea is intended to be used in local “mesh” \cite{wcn} networks.
+Althea allows routers to pay each other for bandwidth using cryptocurrency payment channels. An important architectural detail is that nodes only pay neighbors for forwarding packets. On top of this pay-for-forward network, we build a system allowing consumers to pay for internet access. Althea is intended to be used in local ``mesh'' \cite{wcn} networks.
 
 \subsection{Network}
 
@@ -112,9 +116,9 @@ In \autoref{sec:metering}, we cover the use of tunnels to allow neighbors to ver
 
 \section{Routing}
 \label{sec:routing}
-Routing in Althea is based on the Babel routing protocol \cite{babel}. Babel is a distance vector protocol which has proven to be robust and performant. All distance vector protocols are based on a distributed form of the Bellman-Ford pathfinding algorithm \cite{bellmanford}. Nodes first perform some kind of link quality test on the connections to their neighbors. This is known as the “link cost”. They then share information about which destinations they can reach at which quality (this starts out being only their immediate neighbors).
+Routing in Althea is based on the Babel routing protocol \cite{babel}. Babel is a distance vector protocol which has proven to be robust and performant. All distance vector protocols are based on a distributed form of the Bellman-Ford pathfinding algorithm \cite{bellmanford}. Nodes first perform some kind of link quality test on the connections to their neighbors. This is known as the ``link cost''. They then share information about which destinations they can reach at which quality (this starts out being only their immediate neighbors).
  
-Whenever a node receives information about a destination, it combines this information with the link cost of the neighbor it received this information from. This composite score is known as the “route metric”, and represents the quality with which the destination can be reached across several hops. The neighbor offering the best metric for a given destination is selected as the next hop. All packets being sent to the destination will go through this neighbor. Babel implements this selection by adding and remove routes from the Linux kernel routing table.
+Whenever a node receives information about a destination, it combines this information with the link cost of the neighbor it received this information from. This composite score is known as the ``route metric'', and represents the quality with which the destination can be reached across several hops. The neighbor offering the best metric for a given destination is selected as the next hop. All packets being sent to the destination will go through this neighbor. Babel implements this selection by adding and remove routes from the Linux kernel routing table.
  
 From the Babel specification:
 \begin{quote}
@@ -122,14 +126,14 @@ As many routing algorithms, Babel computes costs of links between any two neighb
 Given a route between any two nodes, the metric of the route is the sum of the costs of all the edges along the route. The goal of the routing algorithm is to compute, for every source S, the tree of the routes of lowest metric to S.
 \end{quote}
 
-NOTE: We will use the word ``destination" to refer to the destination of data packets. Babel refers to this as ``source", because it is the source of routing packets.
+NOTE: We will use the word ``destination'' to refer to the destination of data packets. Babel refers to this as ``source'', because it is the source of routing packets.
 
 \subsection{Route metric verification}
 All current distance vector protocols, including Babel, have a major weakness. All information about link cost and route metrics is provided on a completely trusted and unverified basis. There is nothing stopping any node from claiming that it has the best route to any destination. This is usually not a problem, since most networks today are owned by one entity. In Althea, nodes are owned by many people and entities, all competing to provide the best service. Leaving this vulnerability unaddressed would allow financially-motivated attacks, such as nodes claiming to have better routes than they actually do in an effort to get more business.
  
-Babel uses a sequence of “Hello” and “I heard you” (or “IHU”) messages to estimate link quality between neighbors. Each node periodically broadcasts a Hello message to all of its neighbors. Each Hello has a sequence number. By looking at the sequence number of each Hello received and comparing it to the last one, neighbors can determine whether they have missed Hello messages from the node. Nodes keep an array of 16 bits for each neighbor corresponding to the last 16 Hello messages, with a 1 representing a received Hello and a 0 representing a missed Hello. From this array, a number called the “rxcost” (short for receive cost) is calculated.
+Babel uses a sequence of ``Hello'' and ``I heard you'' (or ``IHU'') messages to estimate link quality between neighbors. Each node periodically broadcasts a Hello message to all of its neighbors. Each Hello has a sequence number. By looking at the sequence number of each Hello received and comparing it to the last one, neighbors can determine whether they have missed Hello messages from the node. Nodes keep an array of 16 bits for each neighbor corresponding to the last 16 Hello messages, with a 1 representing a received Hello and a 0 representing a missed Hello. From this array, a number called the ``rxcost'' (short for receive cost) is calculated.
 
-This rxcost is then sent back to the neighbor in an IHU message. The neighbor then considers this number the “txcost” (short for transmit cost). From these two numbers the overall link cost is calculated using the ETX metric \cite{etx}. From the Babel specification:
+This rxcost is then sent back to the neighbor in an IHU message. The neighbor then considers this number the ``txcost'' (short for transmit cost). From these two numbers the overall link cost is calculated using the ETX metric \cite{etx}. From the Babel specification:
 
 \begin{quote}
 A node uses a neighbour's Hello history to compute an estimate,
@@ -166,7 +170,7 @@ We have the ability to test and verify the routes advertised by neighbors, but w
 
 We start with the set of all destinations that have been used in the past $x$ seconds. $x$ will be set at a reasonable constant, or it could be adjusted to control verification focus. We select a destination $d$ from this set at random. We then get the set of all routes that are feasible and have a destination of $d$. We select a route $r$ from this set at random.
 
-To test the route, we send the destination “Remote Hello” packets for some amount of time. The Remote Hello packets are similar to Babel’s local Hello packets, but they also carry information about which neighbor they were sent through. Destinations periodically send “Remote IHU” packets to those nodes they have recently received Remote Hello packets from. Similar to Babel’s link cost calculation, the Remote Hello packets are used by the destination to calculate a route cost, and the Remote IHU packets carry this information back. Remote IHU packets also carry back the information about which neighbor the Remote Hello was sent through.
+To test the route, we send the destination ``Remote Hello'' packets for some amount of time. The Remote Hello packets are similar to Babel’s local Hello packets, but they also carry information about which neighbor they were sent through. Destinations periodically send ``Remote IHU'' packets to those nodes they have recently received Remote Hello packets from. Similar to Babel’s link cost calculation, the Remote Hello packets are used by the destination to calculate a route cost, and the Remote IHU packets carry this information back. Remote IHU packets also carry back the information about which neighbor the Remote Hello was sent through.
 
 \subsection{Accuracy score}
 \label{sec:accuracy}
@@ -208,7 +212,7 @@ D = \frac{C_1}{T_{now} - T_{last}}^{\delta C_2}
 Where $C_1$ and $C_2$ are constants to be adjusted and hardcoded. This formula will make it take longer to go back to using a neighbor’s advertised metrics if the advertised metrics needed to be corrected recently, and/or required a large correction.
 
 \subsection{Price metric}
-We also need a way to propagate a price for each route, and take this price into account when making forwarding decisions. Babel already includes a mechanism for adding arbitrary ``External Sources of Willingness". This works by having nodes add a number to the metric they have calculated for a route. This doesn’t work for us for two reasons: 
+We also need a way to propagate a price for each route, and take this price into account when making forwarding decisions. Babel already includes a mechanism for adding arbitrary ``External Sources of Willingness''. This works by having nodes add a number to the metric they have calculated for a route. This doesn’t work for us for two reasons: 
 
 \begin{itemize}
 \item[--] First, the route metric in our system is verified. Modifying it arbitrarily would break this verification.
