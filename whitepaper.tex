@@ -7,8 +7,14 @@
 \usepackage{algpseudocode}
 \usepackage{listings}
 \usepackage[dvipsnames]{xcolor}
-
 \usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+
+\setlength{\parskip}{3pt}
+
+\widowpenalties 1 10000
+
 \hypersetup{
 	linkcolor  = blue!60!black!90!gray,
 	citecolor  = blue!60!black!90!gray,
@@ -146,12 +152,17 @@ We propose a modification to the Babel protocol to allow for verification of rou
 \subsection{Verification scheduling}
 We have the ability to test and verify the routes advertised by neighbors, but we need some way of deciding which routes to verify. Verification runs on a timer. Each verification cycle a node follows this procedure to choose a route $r$ to verify:
 
-\begin{algorithmic}\\
+\noindent
+\begin{minipage}[c]{\textwidth}
+\vspace{\abovedisplayskip}
+\begin{algorithmic}
 \State $D=$ \{ destinations used in the past $x$ seconds \}
 \State $d\gets$ \Call{randomSample}{$D$}
 \State $R=$ \{ feasible routes to destination $d$ \}
-\State $r\gets$ \Call{randomSample}{$R$}\\
+\State $r\gets$ \Call{randomSample}{$R$}
 \end{algorithmic}
+\vspace{\belowdisplayskip}
+\end{minipage}
 
 We start with the set of all destinations that have been used in the past $x$ seconds. $x$ will be set at a reasonable constant, or it could be adjusted to control verification focus. We select a destination $d$ from this set at random. We then get the set of all routes that are feasible and have a destination of $d$. We select a route $r$ from this set at random.
 
@@ -161,7 +172,10 @@ To test the route, we send the destination “Remote Hello” packets for some a
 \label{sec:accuracy}
 Once we receive a Remote IHU from a destination, we update the neighbor’s accuracy score $s$ with the following procedure:
 
-\begin{algorithmic}\\
+\noindent
+\begin{minipage}[c]{\textwidth}
+\vspace{\abovedisplayskip}
+\begin{algorithmic}
 \State $d=$ destination that sent the IHU
 \State $n=$ neighbor shown by IHU message
 \State $c=$ verified route cost shown by IHU message
@@ -172,16 +186,18 @@ Once we receive a Remote IHU from a destination, we update the neighbor’s accu
 \State $s\gets$ \Call{average}{$A$}\\
 \If{$s < C_1$}
 \State $n$'s routes are removed from routing table
-\EndIf\\
+\EndIf
 \end{algorithmic}
+\vspace{\belowdisplayskip}
+\end{minipage}
 
 A per-destination accuracy score $a$ is calculated as the proportion of the verified route cost $c$ to the route metric $m$ advertised by the neighbor $n$. It is then averaged with the current accuracy score for that destination $A_d$. We then take $s$, the average of all active destination accuracy scores for the neighbor. If $s$ drops below some adjustable value $C_1$, the neighbor’s routes are taken off of the kernel routing table.
 
 \subsection{Route metric adjustment}
 \label{sec:adjustment}
-The above system is used to weed out chronically inaccurate neighbors, but it also supplies us with a stream of correct route metrics. We can use these metrics to improve our routing table even before a given inaccurate neighbor is dropped. When we receive the route cost c above, we can start using it instead of the neighbor’s advertised metric when selecting routes. We continue using c for a duration Tadjustment.
+The above system is used to weed out chronically inaccurate neighbors, but it also supplies us with a stream of correct route metrics. We can use these metrics to improve our routing table even before a given inaccurate neighbor is dropped. When we receive the route cost c above, we can start using it instead of the neighbor’s advertised metric when selecting routes. We continue using c for a duration $D$.
  
-How long to make Tadjustment? If Tadjustment is too short, then nodes will go right back to trusting an inaccurate metric that they recently had to correct. If Tadjustment is too long, then nodes will miss out on legitimate updates about newly improved routes.
+How long to make $D$? If $D$ is too short, then nodes will go right back to trusting an inaccurate metric that they recently had to correct. If $D$ is too long, then nodes will miss out on legitimate updates about newly improved routes.
 					
 To strike the right balance, exponentially increasing time-out will be used for bandwidth corrections beyond a small tolerance. A node that has participated in a correction will record the time $T_{last}$ it last performed a correction for a given route and the size of the correction $\delta$. When participating in another correction on the same route the duration $D$ to apply the bandwidth correction will be determined as:
 
@@ -201,10 +217,13 @@ We also need a way to propagate a price for each route, and take this price into
 
 The requirements of this price metric are very simple, compared to other parts of Althea. It consists of an additional 16 bit price field in each Babel update TLV and in each route in a node’s routing table. This represents the amount of Althea tokens that it costs to forward one kilobyte of data to a destination. As update packets are propagated through the network, each node increases the route’s price by a certain amount. The simplest way to determine how much to add to the route price is with a constant set by the node’s operator. However, there could be many different types of automated price-setting algorithms to adjust the price based on demand or competition.
 
+\pagebreak[3]
+
 Babel’s route selection procedure is extended to take this price field into account. Instead of selecting routes based purely on route metric, an extended metric $m'$ is calculated with
-\begin{algorithmic}\\
-\State $m'\gets m+pn$\\
-\end{algorithmic}
+
+\[
+m'= m+pn
+\]
 
 Where $m$ is the route metric, $p$ is the price, and $n$ is a constant multiplier. Routes are then chosen based on $m'$. By adjusting $n$, nodes can determine how much weight to give price in the calculation. A node with a lower value for $n$ will tend to prefer expensive but higher quality routes. It would even be possible to populate multiple routing tables with routes selected at different values of $n$, and propagate routes from these tables under different router IDs. This or a similar mechanism could be used to allow neighbors to choose from among a range of price-quality tradeoffs.
 
@@ -222,6 +241,7 @@ Althea uses a Solidity contract for channels. This compiles to bytecode which ru
 \paragraph{Channels list}
 The contract stores a list of \texttt{Channels}, indexed by pairs of participant addresses (payment addresses, not IP addresses) and \texttt{ChannelID}.
 
+\begin{minipage}[c]{\textwidth}
 \begin{lstlisting}
 Channels[address1 + address2 + ChannelID] = {
 	ChannelID: int16,
@@ -233,10 +253,12 @@ Channels[address1 + address2 + ChannelID] = {
 	LastPaymentTxTime: int16,
 }
 \end{lstlisting}
+\end{minipage}
 
 \paragraph{Channel funding}
 When two nodes wish to open a channel, each one sends a channel \texttt{FundingTx} to the contract. This transaction includes the payment address of the other participant \texttt{Counterparty}, a \texttt{ChannelID} for the channel, and a \texttt{Fund} amount of Althea tokens to fund the channel. The contract stores the Althea tokens and adds an entry to the channels list for the participants.
 
+\begin{minipage}[c]{\textwidth}
 \begin{lstlisting}
 FundingTx = {
 	ChannelID: int16,
@@ -244,10 +266,12 @@ FundingTx = {
 	Fund: int32,
 }
 \end{lstlisting}
+\end{minipage}
 
 \paragraph{Channel payments}
 When one of the nodes wishes to pay the other, it sends a signed \texttt{PaymentTx} directly to the other node (not to the contract on the blockchain). This transaction includes a sequence number and an adjustment amount. The adjustment is an integer, that when added to the channel’s \texttt{Balance1} and subtracted from the channel’s \texttt{Balance2}, yields a new set of balances representing the state of the channel after the payment.
 
+\begin{minipage}[c]{\textwidth}
 \begin{lstlisting}
 PaymentTx = {
 	ID: int16,
@@ -258,6 +282,7 @@ PaymentTx = {
 	Signature2: [64]byte,
 }
 \end{lstlisting}
+\end{minipage}
 
 The \texttt{PaymentTx} is all that is required to make a payment. To withdraw funds from the channel, a node adds its own signature to the \texttt{PaymentTx} and sends it to the contract on the blockchain. The contract stores the \texttt{PaymentTx} with the channel along with the time it was submitted.
 
@@ -278,6 +303,10 @@ Another attack is a replay attack on the \texttt{PaymentTx}. If a node ever open
 \label{sec:metering}
 We’ve set up a system where nodes are able to pay for traffic, but what happens if they don’t pay? There needs to be some control over which neighbors receive internet access. It’s easy to spoof a MAC address, so we need some kind of cryptographic authentication. One way to do cryptographic authentication of packets on radio is WPA \cite{80211i}, but we need something that can be done on wired links too. The best solution for now is to use an encrypted and authenticated tunneling software like Wireguard \cite{wireguard}. A small optimization would be to include authentication information in an IPv6 header extension, instead of encapsulation in tunnel packets with Wireguard. However, Wireguard is already highly optimized, so this is an adequate solution for now.
 
+\begin{wrapfigure}[12]{l}{0.3\textwidth}
+\centering{\includegraphics[width=0.28\textwidth]{metering-diagram.pdf}}
+\end{wrapfigure}
+
 Nodes create tunnels with each of their neighbors and can allow, block, or shape traffic on each tunnel, depending on payment. Wireguard creates a virtual interface for each tunnel. The virtual interfaces created by the tunnels of all the neighbors on one physical interface are bridged together into another virtual interface for Babel to run on. This preserves some per-interface optimizations made by Babel.
 
 If payment over a neighbor’s payment channel stops, their packets are blocked by the firewall and are no longer forwarded.
@@ -287,7 +316,11 @@ Metering from the exit server to the home node is accomplished in the same way. 
 \section{Network}
 \label{sec:network}
 The base primitive that Althea is built on is a pay-for-forward network. If all the mechanisms in the preceding sections work correctly, we have a network where nodes can pay each other very granularly for the service of forwarding data, and verify that the forwarding is happening correctly. This section deals with using such a network to provide the one of the most popular network services, internet access.
- 
+
+\begin{figure}[h]
+\centering{\includegraphics[width=0.58\textwidth]{node-types-diagram.pdf}}
+\end{figure}
+
 For a network to provide internet access, there must be at least one node that has a connection to the internet. Hopefully, there will be many. We call such a node a gateway node. A gateway node connects to an exit server over a tunnel. The tunnel creates a virtual interface which Babel is run on, treating it like any other link. The gateway node/exit server topology \cite{exittopology} is used by wlan slovenija \cite{wlanslovenija}, PeoplesOpen.net \cite{pplsopen}, and other community mesh networks.
 
 Babel routes to destinations over tunnel connections just as well as it does over real connections. This means that the nodes do not have to do any kind of explicit gateway selection. Gateway nodes set a price and receive payment for routes to the exit server just like any other route. Home nodes are connected to chosen exit servers over encrypted tunnels, and receive internet access over these tunnels. The only thing that gateway and intermediary nodes see is encrypted traffic between home nodes and exit servers.
