@@ -13,7 +13,7 @@
 
 \setlength{\parskip}{3pt}
 
-\widowpenalties 1 10000
+% \widowpenalties 1 10000
 
 \hypersetup{
 	linkcolor  = blue!60!black!90!gray,
@@ -118,23 +118,26 @@ In \autoref{sec:metering}, we cover the use of tunnels to allow neighbors to ver
 \label{sec:routing}
 Routing in Althea is based on the Babel routing protocol \cite{babel}. Babel is a distance vector protocol which has proven to be robust and performant. All distance vector protocols are based on a distributed form of the Bellman-Ford pathfinding algorithm \cite{bellmanford}. Nodes first perform some kind of link quality test on the connections to their neighbors. This is known as the ``link cost''. They then share information about which destinations they can reach at which quality (this starts out being only their immediate neighbors).
  
-Whenever a node receives information about a destination, it combines this information with the link cost of the neighbor it received this information from. This composite score is known as the ``route metric'', and represents the quality with which the destination can be reached across several hops. The neighbor offering the best metric for a given destination is selected as the next hop. All packets being sent to the destination will go through this neighbor. Babel implements this selection by adding and remove routes from the Linux kernel routing table.
+Whenever a node receives information about a destination\footnote{We will use the word ``destination'' to refer to the destination of data packets. Babel refers to this as ``source'', because it is the source of routing packets.}, it combines this information with the link cost of the neighbor it received this information from. This composite score is known as the ``route metric'', and represents the quality with which the destination can be reached across several hops. The neighbor offering the best metric for a given destination is selected as the next hop. All packets being sent to the destination will go through this neighbor. Babel implements this selection by adding and remove routes from the Linux kernel routing table.
  
+\begin{minipage}[c]{\textwidth}
 From the Babel specification:
 \begin{quote}
-As many routing algorithms, Babel computes costs of links between any two neighbouring nodes, abstract values attached to the edges between two nodes.  [..]\\
+As many routing algorithms, Babel computes costs of links between any two neighbouring nodes, abstract values attached to the edges between two nodes.  [..]
+
 Given a route between any two nodes, the metric of the route is the sum of the costs of all the edges along the route. The goal of the routing algorithm is to compute, for every source S, the tree of the routes of lowest metric to S.
 \end{quote}
-
-NOTE: We will use the word ``destination'' to refer to the destination of data packets. Babel refers to this as ``source'', because it is the source of routing packets.
+\end{minipage}
 
 \subsection{Route metric verification}
 All current distance vector protocols, including Babel, have a major weakness. All information about link cost and route metrics is provided on a completely trusted and unverified basis. There is nothing stopping any node from claiming that it has the best route to any destination. This is usually not a problem, since most networks today are owned by one entity. In Althea, nodes are owned by many people and entities, all competing to provide the best service. Leaving this vulnerability unaddressed would allow financially-motivated attacks, such as nodes claiming to have better routes than they actually do in an effort to get more business.
  
 Babel uses a sequence of ``Hello'' and ``I heard you'' (or ``IHU'') messages to estimate link quality between neighbors. Each node periodically broadcasts a Hello message to all of its neighbors. Each Hello has a sequence number. By looking at the sequence number of each Hello received and comparing it to the last one, neighbors can determine whether they have missed Hello messages from the node. Nodes keep an array of 16 bits for each neighbor corresponding to the last 16 Hello messages, with a 1 representing a received Hello and a 0 representing a missed Hello. From this array, a number called the ``rxcost'' (short for receive cost) is calculated.
 
-This rxcost is then sent back to the neighbor in an IHU message. The neighbor then considers this number the ``txcost'' (short for transmit cost). From these two numbers the overall link cost is calculated using the ETX metric \cite{etx}. From the Babel specification:
+This rxcost is then sent back to the neighbor in an IHU message. The neighbor then considers this number the ``txcost'' (short for transmit cost). From these two numbers the overall link cost is calculated using the ETX metric \cite{etx}.
 
+\begin{minipage}[c]{\textwidth}
+From the Babel specification:
 \begin{quote}
 A node uses a neighbour's Hello history to compute an estimate,
 written beta, of the probability that a Hello TLV is successfully
@@ -150,6 +153,7 @@ or, equivalently,\\
    cost = (MAX(txcost, 256) * rxcost) / 256.\\
 
 \end{quote}
+\end{minipage}
 
 We propose a modification to the Babel protocol to allow for verification of routes. Our modification involves nodes sending Hellos and IHU messages back and forth to remote destinations. The same cost and metric calculations are performed as with local neighbors. The metric calculated is expected to be close to the overall metric advertised for the destination by the neighbor currently forwarding packets to the destination. This gives us a way to verify the accuracy of advertised routes. If the metric does not match the metric advertised by the selected neighbor, the neighbor’s accuracy score is affected (\autoref{sec:accuracy}), and the metric through this neighbor is adjusted (\autoref{sec:adjustment}).
 
