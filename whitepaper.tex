@@ -47,31 +47,29 @@
   \large An incentivized mesh network protocol}
 \author{Jehan Tremback, Justin Kilpatrick\\
 \texttt{\{jehan,justin\}@altheamesh.com}\\}
-\date{May 2017\\
-\texttt{v0.4}}
+\date{May 2017 \texttt{v0.5}}
 \begin{document}
 
 \maketitle
 
-\begin{abstract}
+\begin{unbreakable}
+\section*{Abstract}
+\begin{small}
+As the number of connected individuals and devices expands, the ``last mile''\footnote{``Last mile'' refers to the distance between an internet exchange and a user, often less than 10 miles.} continues to be the greatest challenge both in the connected and developing worlds, representing a disproportionate portion of the cost and difficulty of connecting the world.
+ 
+Althea is meant to operate on the last mile, from a source of internet connectivity\footnote{such as an internet exchange or tier-1 or -2 network connection, or even a business grade ISP connection.} to the end user, and creates a distributed ISP. The last mile is currently an inefficient market and many areas only have one ISP \cite{fcc}. Althea aims to replace centralized ISPs with a competitive market of individuals and businesses providing participating in one decentralized network.
 
-As the number of connected individuals and devices expands, the ``last mile'' continues to be the greatest challenge both in the connected and developing worlds, representing a disproportionate portion of the cost and difficulty of connecting the world.
- 
-Althea is meant to operate on the last mile, from a source of internet connectivity (such as an internet exchange point) to the end user, and creates a distributed ISP. The last mile is currently an inefficient market- many areas only have one ISP \cite{fcc}. Althea aims to replace centralized ISPs with a free market of individuals providing connectivity services as part of one decentralized network.
- 
-We hope that by lowering the barrier of entry to earn money by providing connectivity services we can decrease the cost of of internet access. This could help connect the developing world as well as creating an environment that fosters competition in otherwise monopolistic last mile infrastructure in developed countries.
- 
-Althea’s goal is for any person to be able to install a piece of equipment, route traffic for others, and receive payment for the service.
+Althea’s goal is for any person to be able to install a piece of equipment, participate in the decentralized ISP, and receive payment for the service.
 
 \begin{itemize}
-\item[--] Switching costs within the system are reduced, as nodes switch between connectivity providers automatically according to a routing protocol which finds a route with the best combination of reliability, bandwidth, and low cost.
+\item[--] Switching costs within the system are reduced, as nodes switch between connectivity providers to find a route with the best combination of reliability, bandwidth, and low cost.
  
 \item[--] Advertising and marketing costs for the connectivity providers are eliminated, as the only advertisements in this system are the automatic advertisements of price and route quality between nodes. This makes things easy for new entrants.
  
 \item[--] Contract and billing costs are eliminated by payment channels. Payment channels allow one to make micropayments with very low overhead.
 \end{itemize}
-
-\end{abstract}
+\end{small}
+\end{unbreakable}
 
 \tableofcontents
 
@@ -79,7 +77,7 @@ Althea’s goal is for any person to be able to install a piece of equipment, ro
 \label{sec:overview}
 Althea allows routers to pay each other for bandwidth using cryptocurrency payment channels. An important architectural detail is that nodes only pay neighbors for forwarding packets. On top of this pay-for-forward network, we build a system allowing consumers to pay for internet access. Althea is intended to be used in local ``mesh'' \cite{wcn} networks.
 
-\subsection{Network}
+\subsection{Network overview}
 
 There are a few different types of nodes that participate in Althea:
 
@@ -98,10 +96,10 @@ Home nodes may be paid by other nodes to forward packets, but without specialize
 
 Read more about the network architecture in \autoref{sec:network}.
 
-\subsection{Routing}
-In \autoref{sec:routing}, we define a couple of extensions to the Babel routing protocol. Babel was selected because it has several useful properties for our purpose. However, any distance vector routing protocol could be modified to exhibit the properties we require. Distance vector protocols are already used extensively on the internet. One well-known distance vector protocol is BGP \cite{bgp}.
+\subsection{Routing overview}
+In \autoref{sec:routing}, we define a couple of extensions to the Babel routing protocol. Babel was selected because it has several useful properties for our purpose. However, any distance vector routing protocol could be modified to exhibit the properties Althea requires. Distance vector protocols are already used extensively on the internet. One well-known distance vector protocol is BGP \cite{bgp}.
  
-Routing in distance vector protocols is based on an advertised connection quality metric. Nodes send an announcement packet stating their identity and existence to the network once every predetermined period. These announcement packets are then passed from node to node. Each node updates the metric to reflect the connection quality between it and the neighbor it got the announcement from. Using this information, each node is able to build up a routing table of the best neighbors to forward packets to to get to any destination on the network.
+Routing in distance vector protocols is based on an advertised connection quality metric. Nodes send an announcement packet stating their identity and existence to the network once every predetermined period. These announcement packets are then passed from node to node. Each node updates the metric to reflect the connection quality between it and the neighbor it got the announcement from. Using this information, each node is able to build up a routing table of the best neighbors to forward packets in order to reach any destination on the network.
 
 \begin{unbreakable}
 We propose two main additions to distance vector routing:
@@ -115,14 +113,14 @@ A verifiable quality metric is a connection quality metric that can be verified 
  
 To advertise prices a second metric is added to the routing advertisements, this time containing a ‘price’ value for some arbitrary but agreed upon amount of data transfer. When passing advertisements each node updates the price field with their bid for passing data. Routes are then selected by optimizing the quality metric vs the price metric and paying the selected the full sum required to route all the way to the destination. 
 
-\subsection{Payments}
+\subsection{Payments overview}
 Each node on the network establishes payment channels with each of its neighbors. A payment channel is a method for two parties to exchange payments trustlessly by signing transactions that alter the balance of an escrow account held by a bank or blockchain (we may use the Ethereum blockchain for Althea) \cite{btcwiki}, \cite{bitcoinj}, \cite{machinomy}. More detail about the functioning of our payment channels can be found in \autoref{sec:payments}.
  
 The important thing about a payment channel is that after the channel has been opened, and funds have been placed in escrow, individual payments can be made directly between the two parties without submitting anything to the bank or blockchain. This means that the entire payment can be completed in one packet. Most payment systems need to send another transmission to a bank or blockchain, and wait for it to be confirmed. 
  
 Using payment channels, nodes can pay each other in very small increments (on the order of cents or less). This allows them to pay their neighbors to forward data without having to place a lot of trust in their neighbors. Home nodes also open a payment channel with an exit server of their choice. This channel is used to pay the exit server for routing data onto the internet, as well as paying for return traffic back to the node. Read more about exit servers in \autoref{sec:network}.
 
-\subsection{Metering}
+\subsection{Metering overview}
 Nodes keep track of data they have forwarded for their neighbors, and how much they have been paid. If these two amounts do not match up, they must having some way of cutting off access to the delinquent neighbor. Blocking the neighbor’s MAC address could be one way to accomplish this, but MAC addresses are easily changed and spoofed. Similarly, exit servers must be able to control traffic from home nodes.
  
 In \autoref{sec:metering}, we cover the use of tunnels to allow neighbors to verify traffic between one another, as well as allowing exit servers to authenticate traffic from home nodes.
@@ -351,9 +349,17 @@ The base primitive that Althea is built on is a pay-for-forward network. If all 
 \centering{\includegraphics[width=0.58\textwidth]{node-types-diagram.pdf}}
 \end{figure}
 
-For a network to provide internet access, there must be at least one node that has a connection to the internet. Hopefully, there will be many. We call such a node a gateway node. A gateway node connects to an exit server over a tunnel. The tunnel creates a virtual interface which Babel is run on, treating it like any other link. The gateway node/exit server topology \cite{exittopology} is used by wlan slovenija \cite{wlanslovenija}, PeoplesOpen.net \cite{pplsopen}, and other community mesh networks.
+For a network to provide internet access, there must be at least one node that has a connection to the internet. Hopefully, there will be many. We call such a node a gateway node. A gateway node connects to an exit server over a tunnel. The tunnel creates a virtual interface which Babel is run on, treating it like any other link. The gateway node/exit server topology \cite{exittopology} is used by WLAN Slovenija \cite{wlanslovenija}, PeoplesOpen.net \cite{pplsopen}, and other community mesh networks.
+
+% \begin{unbreakable}
+
+\begin{figure}[h]
+\centering{\includegraphics[width=0.8\textwidth]{tunnel-diagram.pdf}}
+\end{figure}
 
 Babel routes to destinations over tunnel connections just as well as it does over real connections. This means that the nodes do not have to do any kind of explicit gateway selection. Gateway nodes set a price and receive payment for routes to the exit server just like any other route. Home nodes are connected to chosen exit servers over encrypted tunnels, and receive internet access over these tunnels. The only thing that gateway and intermediary nodes see is encrypted traffic between home nodes and exit servers.
+
+% \end{unbreakable}
 
 \subsection{Exit servers}
 Exit servers perform almost all the functions of an ISP, except for actually carrying packets. This lets the other nodes in the network focus only on connectivity, while exit servers get paid for interfacing Althea to the rest of the internet, and to the business and legal worlds. Exit servers fuse Althea’s pseudonymous, trustless, cyptocurrency powered physical layer with our current internet and society. People who are good at providing connectivity can focus on providing connectivity, while exit servers deal with everything else. 
@@ -454,6 +460,7 @@ frozeman\\
 
 \bibitem{wireguard}
 \emph{WireGuard: Next Generation Kernel Network Tunnel}\\
+Jason A. Donenfeld\\
 \texttt{\url{https://www.wireguard.io/papers/wireguard.pdf}}\\
 2016
 
