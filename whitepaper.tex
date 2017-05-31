@@ -82,15 +82,15 @@ Althea allows routers to pay each other for bandwidth using cryptocurrency payme
 There are a few different types of nodes that participate in Althea:
 
 \begin{itemize}
-\item[--] \textbf{Home nodes} are installed by people who want to buy internet access on Althea. You can think of a home node as being similar to the router and/or modem that is installed by a traditional ISP. The difference is that it is independent of any one ISP.
+\item[--] \textbf{User nodes} are installed by people who want to buy internet access on Althea. You can think of a user node as being similar to the router and/or modem that is installed by a traditional ISP. The difference is that it is independent of any one ISP.
  
-Home nodes may be paid by other nodes to forward packets, but without specialized hardware and positioning the income is expected to be be relatively small.
+User nodes may be paid by other nodes to forward packets, but without specialized hardware and positioning the income is expected to be be relatively small.
 
 \item[--] \textbf{Intermediary nodes} are installed by people who want to earn money by forwarding internet traffic (connectivity providers). These will typically be more powerful nodes and may be placed in advantageous locations with good line of sight to other nodes. 
 
-\item[--] \textbf{Gateway nodes} are like intermediary nodes, but they are connected to a source of cheap internet bandwidth such as an internet exchange, an internet backbone connection, or even a business-grade connection from a conventional ISP. They act as connection from Althea’s physical layer to the outside internet. However, they are shielded from having to take legal responsibility for traffic on the network by the exit servers.
+\item[--] \textbf{Gateway nodes} are like intermediary nodes, but they are connected to a source of cheap internet bandwidth such as an internet exchange, an internet backbone connection, or even a business-grade connection from a conventional ISP. They act as connection from Althea’s physical layer to the outside internet. However, they are shielded from having to take legal responsibility for traffic on the network by the exit nodes.
 
-\item[--] \textbf{Exit servers} are not necessarily part of the local physical network, but can be hosted in a datacenter reachable over the internet. They are connected to gateway nodes over VPN tunnels. Exit servers provide an endpoint to verify quality metrics propagated by nodes in the network. This enables automatic selection of gateway nodes by the routing protocol. Exit servers also take on the legal role of an ISP, performing network address translation to route requests onto the public internet and dealing with copyright complaints etc. This allows gateway nodes to act as pure providers of bandwidth, without having to take on any legal risk resulting from the use of their service.
+\item[--] \textbf{Exit nodes} are not necessarily part of the local physical network, but can be hosted in a datacenter reachable over the internet. They are connected to gateway nodes over VPN tunnels. Exit nodes provide an endpoint to verify quality metrics propagated by nodes in the network. This enables automatic selection of gateway nodes by the routing protocol. Exit nodes also take on the legal role of an ISP, performing network address translation to route requests onto the public internet and dealing with copyright complaints etc. This allows gateway nodes to act as pure providers of bandwidth, without having to take on any legal risk resulting from the use of their service.
 
 \end{itemize}
 
@@ -118,12 +118,12 @@ Each node on the network establishes payment channels with each of its neighbors
  
 The important thing about a payment channel is that after the channel has been opened, and funds have been placed in escrow, individual payments can be made directly between the two parties without submitting anything to the bank or blockchain. This means that the entire payment can be completed in one packet. Most payment systems need to send another transmission to a bank or blockchain, and wait for it to be confirmed. 
  
-Using payment channels, nodes can pay each other in very small increments (on the order of cents or less). This allows them to pay their neighbors to forward data without having to place a lot of trust in their neighbors. Home nodes also open a payment channel with an exit server of their choice. This channel is used to pay the exit server for routing data onto the internet, as well as paying for return traffic back to the node. Read more about exit servers in \autoref{sec:network}.
+Using payment channels, nodes can pay each other in very small increments (on the order of cents or less). This allows them to pay their neighbors to forward data without having to place a lot of trust in their neighbors. User nodes also open a payment channel with an exit node of their choice. This channel is used to pay the exit node for routing data onto the internet, as well as paying for return traffic back to the node. Read more about exit nodes in \autoref{sec:network}.
 
 \subsection{Metering overview}
-Nodes keep track of data they have forwarded for their neighbors, and how much they have been paid. If these two amounts do not match up, they must having some way of cutting off access to the delinquent neighbor. Blocking the neighbor’s MAC address could be one way to accomplish this, but MAC addresses are easily changed and spoofed. Similarly, exit servers must be able to control traffic from home nodes.
+Nodes keep track of data they have forwarded for their neighbors, and how much they have been paid. If these two amounts do not match up, they must having some way of cutting off access to the delinquent neighbor. Blocking the neighbor’s MAC address could be one way to accomplish this, but MAC addresses are easily changed and spoofed. Similarly, exit nodes must be able to control traffic from user nodes.
  
-In \autoref{sec:metering}, we cover the use of tunnels to allow neighbors to verify traffic between one another, as well as allowing exit servers to authenticate traffic from home nodes.
+In \autoref{sec:metering}, we cover the use of tunnels to allow neighbors to verify traffic between one another, as well as allowing exit nodes to authenticate traffic from user nodes.
 
 \section{Routing}
 \label{sec:routing}
@@ -339,7 +339,7 @@ Nodes create tunnels with each of their neighbors and can allow, block, or shape
 If payment over a neighbor’s payment channel stops, their packets are blocked by the firewall and are no longer forwarded.
 \end{unbreakable}
 
-Metering from the exit server to the home node is accomplished in the same way. There is also a Wireguard tunnel from the exit server to the home node for other reasons, namely privacy and and as part of Lightweight 4over6 \cite{4over6}. This tunnel provides a good control point for the exit server to cut service to the home node in the case of non-payment. 
+Metering from the exit node to the user node is accomplished in the same way. There is also a Wireguard tunnel from the exit node to the user node for other reasons, namely privacy and and as part of Lightweight 4over6 \cite{4over6}. This tunnel provides a good control point for the exit node to cut service to the user node in the case of non-payment. 
 
 \section{Network}
 \label{sec:network}
@@ -349,7 +349,7 @@ The base primitive that Althea is built on is a pay-for-forward network. If all 
 \centering{\includegraphics[width=0.58\textwidth]{node-types-diagram.pdf}}
 \end{figure}
 
-For a network to provide internet access, there must be at least one node that has a connection to the internet. Hopefully, there will be many. We call such a node a gateway node. A gateway node connects to an exit server over a tunnel. The tunnel creates a virtual interface which Babel is run on, treating it like any other link. The gateway node/exit server topology \cite{exittopology} is used by WLAN Slovenija \cite{wlanslovenija}, PeoplesOpen.net \cite{pplsopen}, and other community mesh networks.
+For a network to provide internet access, there must be at least one node that has a connection to the internet. Hopefully, there will be many. We call such a node a gateway node. A gateway node connects to an exit node over a tunnel. The tunnel creates a virtual interface which Babel is run on, treating it like any other link. The gateway node/exit node topology \cite{exittopology} is used by WLAN Slovenija \cite{wlanslovenija}, PeoplesOpen.net \cite{pplsopen}, and other community mesh networks.
 
 % \begin{unbreakable}
 
@@ -357,31 +357,31 @@ For a network to provide internet access, there must be at least one node that h
 \centering{\includegraphics[width=0.8\textwidth]{tunnel-diagram.pdf}}
 \end{figure}
 
-Babel routes to destinations over tunnel connections just as well as it does over real connections. This means that the nodes do not have to do any kind of explicit gateway selection. Gateway nodes set a price and receive payment for routes to the exit server just like any other route. Home nodes are connected to chosen exit servers over encrypted tunnels, and receive internet access over these tunnels. The only thing that gateway and intermediary nodes see is encrypted traffic between home nodes and exit servers.
+Babel routes to destinations over tunnel connections just as well as it does over real connections. This means that the nodes do not have to do any kind of explicit gateway selection. Gateway nodes set a price and receive payment for routes to the exit node just like any other route. User nodes are connected to chosen exit nodes over encrypted tunnels, and receive internet access over these tunnels. The only thing that gateway and intermediary nodes see is encrypted traffic between user nodes and exit nodes.
 
 % \end{unbreakable}
 
-\subsection{Exit servers}
-Exit servers perform almost all the functions of an ISP, except for actually carrying packets. This lets the other nodes in the network focus only on connectivity, while exit servers get paid for interfacing Althea to the rest of the internet, and to the business and legal worlds. Exit servers fuse Althea’s pseudonymous, trustless, cyptocurrency powered physical layer with our current internet and society. People who are good at providing connectivity can focus on providing connectivity, while exit servers deal with everything else. 
+\subsection{Exit nodes}
+Exit nodes perform almost all the functions of an ISP, except for actually carrying packets. This lets the other nodes in the network focus only on connectivity, while exit nodes get paid for interfacing Althea to the rest of the internet, and to the business and legal worlds. Exit nodes fuse Althea’s pseudonymous, trustless, cyptocurrency powered physical layer with our current internet and society. People who are good at providing connectivity can focus on providing connectivity, while exit nodes deal with everything else. 
 
-Exit servers:
+Exit nodes:
 
 \paragraph{Deal with public IP addresses}
-Exit servers have public IP addresses and use them to route traffic for connected home nodes to and from the internet. They either perform NAT for home nodes or provision them with public IP addresses if the home nodes are performing NAT themselves (such as in schemes like Lightweight 4over6 \cite{4over6}). 
+Exit nodes have public IP addresses and use them to route traffic for connected user nodes to and from the internet. They either perform NAT for user nodes or provision them with public IP addresses if the user nodes are performing NAT themselves (such as in schemes like Lightweight 4over6 \cite{4over6}). 
 
 \paragraph{Provide encrypted tunnels}
-All traffic between home nodes and exit servers is encapsulated in a tunnel and encrypted. This means that users of a Althea network only have to trust the exit server with their browsing history and unencrypted traffic. Neighbors who are routing traffic for them will only see encrypted packets going to an exit server.
+All traffic between user nodes and exit nodes is encapsulated in a tunnel and encrypted. This means that users of a Althea network only have to trust the exit node with their browsing history and unencrypted traffic. Neighbors who are routing traffic for them will only see encrypted packets going to an exit node.
 
 \paragraph{Verify routes}
-Our extensions to Babel allow nodes to verify routes between themselves and a destination. Exit servers are the destination for a home node’s outbound traffic, and the home nodes are destinations for the return traffic. Home nodes and exit servers work together to keep the nodes on the Althea network between them accurate. Home nodes are implicitly trusting exit servers to perform route verification accurately.
+Our extensions to Babel allow nodes to verify routes between themselves and a destination. Exit nodes are the destination for a user node’s outbound traffic, and the user nodes are destinations for the return traffic. User nodes and exit nodes work together to keep the nodes on the Althea network between them accurate. User nodes are implicitly trusting exit nodes to perform route verification accurately.
 
 \paragraph{Deal with legal considerations}
-We want it to be as easy as possible for someone to set up a gateway node. Part of this is relieving them of any legal worries related to the use of their connection. Any legal complaints related to the use of an Althea network can only be directed the exit servers, as they are the only ones routing traffic onto the internet and making it visible to the world. Gateway and intermediary nodes only ever see encrypted packets.
+We want it to be as easy as possible for someone to set up a gateway node. Part of this is relieving them of any legal worries related to the use of their connection. Any legal complaints related to the use of an Althea network can only be directed the exit nodes, as they are the only ones routing traffic onto the internet and making it visible to the world. Gateway and intermediary nodes only ever see encrypted packets.
 
 \paragraph{Pay for return traffic}
-Home nodes pay their neighbors to forward traffic to the exit server they are using and onto the internet, but someone needs to pay for the traffic coming back. Home nodes give exit servers some money which the exit servers use to pay their neighbors for the return traffic. Payments from the home node to the exit server can be made in Althea tokens, which the exit server uses to pay its neighbors.
+User nodes pay their neighbors to forward traffic to the exit node they are using and onto the internet, but someone needs to pay for the traffic coming back. User nodes give exit nodes some money which the exit nodes use to pay their neighbors for the return traffic. Payments from the user node to the exit node can be made in Althea tokens, which the exit node uses to pay its neighbors.
 
-Alternately, payments to exit servers could be made with traditional payment systems such as credit cards. The exit server would then use this money to buy Althea tokens, which it would use to pay for incoming traffic sent to a particular home node. An exit server could also supply connected home nodes with the Althea tokens necessary to pay for their outgoing traffic. This could allow people to use Althea without having any understanding of cryptocurrency.
+Alternately, payments to exit nodes could be made with traditional payment systems such as credit cards. The exit node would then use this money to buy Althea tokens, which it would use to pay for incoming traffic sent to a particular user node. An exit node could also supply connected user nodes with the Althea tokens necessary to pay for their outgoing traffic. This could allow people to use Althea without having any understanding of cryptocurrency.
 
 \begin{thebibliography}{99}
 
