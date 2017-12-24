@@ -170,18 +170,20 @@ We propose a modification to the Babel protocol to allow for verification of rou
 
 \subsection{Verification scheduling}
 \begin{unbreakable}
-We have the ability to test and verify the routes advertised by neighbors, but we need some way of deciding which routes to verify. Verification runs on a timer. Each verification cycle a node follows this procedure to choose a route $r$ to verify:
+We have the ability to test and verify the routes advertised by neighbors, and once we have connections open to endpoints we are already using piggybacking packets to verify already used connections is trivial and can be done continuously to prevent fraud. But we would also like to avoid participating in the advertisement of false routes unkowningly. Therefore we need some way of deciding routes to verify from the set of routes in the local routing table we are not currently using.
+
+We propose a system where verification runs on a timer. Each verification cycle a node follows this procedure to choose a route $r$ to verify:
 
 \vspace{\abovedisplayskip}
 \begin{algorithmic}
-\State $D=$ \{ destinations used in the past $x$ seconds \}
-\State $d\gets$ \Call{randomSample}{$D$}
+\State $D=$ \{ destinations not used in the past $x$ seconds \}
+\State $d\gets$ \Call{SimpleRandomSample}{$D$}
 \State $R=$ \{ feasible routes to destination $d$ \}
-\State $r\gets$ \Call{randomSample}{$R$}
+\State $r\gets$ \Call{SimpleRandomSample}{$R$}
 \end{algorithmic}
 \vspace{\belowdisplayskip}
 
-We start with the set of all destinations that have been used in the past $x$ seconds. $x$ will be set at a reasonable constant, or it could be adjusted to control verification focus. We select a destination $d$ from this set at random. We then get the set of all routes that are feasible and have a destination of $d$. We select a route $r$ from this set at random.
+We start with the set of all destinations that have not been used in the past $x$ seconds. $x$ will be set at a reasonable constant, or it could be adjusted to control verification focus. We select a destination $d$ from this set at random. We then get the set of all routes that are feasible and have a destination of $d$. We select a route $r$ from this set using simple random sampling.
 \end{unbreakable}
 
 To test the route, we send the destination ``Remote Hello'' packets for some amount of time. The Remote Hello packets are similar to Babel’s local Hello packets, but they also carry information about which neighbor they were sent through. Destinations periodically send ``Remote IHU'' packets to those nodes they have recently received Remote Hello packets from. Similar to Babel’s link cost calculation, the Remote Hello packets are used by the destination to calculate a route cost, and the Remote IHU packets carry this information back. Remote IHU packets also carry back the information about which neighbor the Remote Hello was sent through.
@@ -228,10 +230,10 @@ Where $C_1$ and $C_2$ are constants to be adjusted and hardcoded. This formula w
 
 \subsection{Price metric}
 \begin{unbreakable}
-We also need a way to propagate a price for each route, and take this price into account when making forwarding decisions. Babel already includes a mechanism for adding arbitrary ``External Sources of Willingness''. This works by having nodes add a number to the metric they have calculated for a route. This doesn’t work for us for two reasons: 
+We also need a way to propagate a price for each route, and take this price into account when making forwarding decisions. Babel already includes a mechanism for adding arbitrary ``External Sources of Willingness''. This works by having nodes add a number to the metric they have calculated for a route. This doesn’t work for us for two reasons:
 \begin{itemize}
-\item[--] First, the route metric in our system is verified. Modifying it arbitrarily would break this verification.
-\item[--] Second, the price must be distinct from the route metric, because it will be used to determine payment amounts. For these reasons, we use a separate price metric.
+\item[--] First, the route metric in our system is verified. Modifying it arbitrarily would make this verification impossible.
+\item[--] Second, the price must be distinct from the route metric, because it will be used to determine payment amounts.
 \end{itemize}
 \end{unbreakable}
 
